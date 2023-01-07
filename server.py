@@ -1,6 +1,7 @@
 #  coding: utf-8 
 import socketserver
-
+from urllib.parse import urlparse
+import os
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,13 +27,79 @@ import socketserver
 
 # try: curl -v -X GET http://127.0.0.1:8080/
 
+BASE_DIRECTORY = "./www/"
+
 
 class MyWebServer(socketserver.BaseRequestHandler):
+
+
+    valid_extensions = {"html","css"}
+    
+    def get(self,path):
+
+        total = BASE_DIRECTORY + path
+
+        file = path.split("/")[-1]
+
+
+        #check for directory traversal
+
+        if os.path.realpath(total).split("/")[0] != BASE_DIRECTORY:
+            self.request.sendall(bytearray("HTTP/1.1 404 Not Found\n\n",'utf-8'))
+
+        #if a directory is requested, serve the index.html within if it exists
+        if path[-1] == "/":
+            path += "index.html" 
+            total = BASE_DIRECTORY + path
+            file = path.split("/")[-1]
+
+        #if there is no file extension, the user has requested a directory incorrectly. redirect them
+        if "." not in file:
+            fixed_path = path + "/"
+            self.request.sendall(bytearray(f"HTTP/1.1 301 Moved Permanently\nLocation: {fixed_path}\nConnection: Closed\n",'utf-8'))
+            return
+
+        #get file extension
+        file_ext = file.split(".")[-1]
+
+        #make sure file_ext is valid and derive mime_type. this webserver only hosts html and css
+        if not file_ext in self.valid_extensions:
+            self.request.sendall(bytearray("HTTP/1.1 404 Not Found\n\n",'utf-8'))
+            return
+
+        mime_type = f"text/{file_ext}"
+
+        
+        if not os.path.exists(total):
+            self.request.sendall(bytearray("HTTP/1.1 404 Not Found\n\n",'utf-8'))
+            return
+        
+        contents = None
+
+        with open(total,"r") as f:
+            contents = f.read()
+
+        self.request.sendall(bytearray(f'HTTP/1.1 200 OK\nLocation: {path}\nContent-Type: {mime_type}\nConnection: Closed\n\n{contents}','utf-8'))   
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+
+        #parse HTTP request
+        req_lines = self.data.decode('utf-8').split("\n")
+        req_info = req_lines[0].split(" ")
+        req_method = req_info[0]
+        req_path = req_info[1]
+        
+        print(req_method,req_path)
+        if req_method.lower() != "get":
+            self.request.sendall(bytearray("HTTP/1.1 405 Method Not Allowed\n\n",'utf-8'))
+            return
+        
+        parsed_path = urlparse(req_path)
+
+        print(parsed_path)
+        self.get(parsed_path.path)
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
