@@ -36,6 +36,18 @@ class MyWebServer(socketserver.BaseRequestHandler):
     valid_extensions = {"html","css"}
     
     def get(self,path):
+
+        #if a directory is requested, serve the index.html within if it exists
+        if path[-1] == "/":
+            path += "index.html" 
+
+        
+        file = path.split("/")[-1]
+        #if there is no file extension, the user has requested a directory incorrectly. redirect them
+        if "." not in file:
+            fixed_path = path + "/"
+            self.request.sendall(bytearray(f"HTTP/1.1 301 Moved Permanently \nLocation: {fixed_path}\nConnection: Closed",'utf-8'))
+            return
         
         path = os.path.normpath(path)
 
@@ -43,19 +55,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         total = BASE_DIRECTORY + path
 
-        file = path.split("/")[-1]
 
-        #if a directory is requested, serve the index.html within if it exists
-        if path[-1] == "/":
-            path += "index.html" 
-            total = BASE_DIRECTORY + path
-            file = path.split("/")[-1]
 
-        #if there is no file extension, the user has requested a directory incorrectly. redirect them
-        if "." not in file:
-            fixed_path = path + "/"
-            self.request.sendall(bytearray(f"HTTP/1.1 301 Moved Permanently \nLocation: {fixed_path}\nConnection: Closed",'utf-8'))
-            return
 
         #get file extension
         file_ext = file.split(".")[-1]
