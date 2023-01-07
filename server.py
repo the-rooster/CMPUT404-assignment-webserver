@@ -100,6 +100,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         print(req_method, req_path)
         if req_method.lower() != "get":
+            print("Method Not Allowed")
             self.request.sendall(
                 bytearray("HTTP/1.1 405 Method Not Allowed ", 'utf-8'))
             return
