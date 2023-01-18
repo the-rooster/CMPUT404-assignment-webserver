@@ -53,6 +53,10 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         # normalize path before appending to BASE_DIRECTORY to avoid directory traversal
         path = os.path.normpath(path)
+        path = path.replace("..","")
+        print("BEFORE: ",path)
+        path = os.path.normpath(path)
+        print("REQUESTED PATH:",path)
         total_path = BASE_DIRECTORY + path
 
         # get file extension
