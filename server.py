@@ -60,7 +60,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         # make sure file_ext is valid and derive mime_type. this webserver only hosts html and css
         if not file_ext in self.valid_extensions:
-            self.request.sendall(bytearray("HTTP/1.1 404 Not Found ", 'utf-8'))
+            self.request.sendall(bytearray("HTTP/1.1 404 Not Found\r\n\r\n", 'utf-8'))
             return
 
         # from here, we can create the content-type header content
@@ -70,7 +70,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         # if such a file does not exist
         if not os.path.exists(total_path):
             print("FILE NOT FOUND!")
-            self.request.sendall(bytearray("HTTP/1.1 404 Not Found ", 'utf-8'))
+            self.request.sendall(bytearray("HTTP/1.1 404 Not Found\r\n\r\n", 'utf-8'))
             return
 
         # placeholder for file contents
