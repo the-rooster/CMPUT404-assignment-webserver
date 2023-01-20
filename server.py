@@ -48,7 +48,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         if "." not in file:
             fixed_path = path + "/"
             self.request.sendall(bytearray(
-                f"HTTP/1.1 301 Moved Permanently \nLocation: {fixed_path}\nConnection: Closed", 'utf-8'))
+                f"HTTP/1.1 301 Moved Permanently \nLocation: {fixed_path}\nConnection: Closed\r\n\r\n", 'utf-8'))
             return
 
         # normalize path before appending to BASE_DIRECTORY to avoid directory traversal
