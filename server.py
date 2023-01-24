@@ -79,13 +79,12 @@ class MyWebServer(socketserver.BaseRequestHandler):
         # get file extension since path does not specify a directory
         file_ext = file.split(".")[-1]
 
-        # make sure file_ext is valid and derive mime_type. this webserver only hosts html and css
+        # make sure file_ext is valid and derive mime_type
         if not file_ext in self.extensions_mimes.keys():
-            self.request.sendall(bytearray("HTTP/1.1 404 Not Found\r\n\r\n", 'utf-8'))
-            return
-
-        # from here, we can get the mime type
-        mime_type = self.extensions_mimes[file_ext]
+            mime_type = "text/plain"
+        else:
+            # from here, we can get the mime type
+            mime_type = self.extensions_mimes[file_ext]
 
         # placeholder for file contents
         contents = None
