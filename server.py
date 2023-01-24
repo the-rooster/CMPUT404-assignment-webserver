@@ -33,7 +33,18 @@ BASE_DIRECTORY = "./www/"
 
 class MyWebServer(socketserver.BaseRequestHandler):
 
-    valid_extensions = {"html", "css"}
+    extensions_mimes = {
+        "html" : "text/html",
+        "css" : "text/css"
+    }
+
+    def fix_path(self,path):
+
+        path = os.path.normpath(path)
+        path = path.replace("..","")
+        path = os.path.normpath(path)
+
+        return path
 
     def get(self, path):
 
@@ -44,38 +55,37 @@ class MyWebServer(socketserver.BaseRequestHandler):
         # extract file requested
         file = path.split("/")[-1]
 
-        # if there is no file extension, the user has requested a directory incorrectly. redirect them
-        if "." not in file:
+
+
+
+        # normalize path before appending to BASE_DIRECTORY to avoid directory traversal
+        path = self.fix_path(path)
+        total_path = BASE_DIRECTORY + path
+
+
+
+
+
+        if os.path.isdir(total_path):
             fixed_path = path + "/"
             self.request.sendall(bytearray(
                 f"HTTP/1.1 301 Moved Permanently \nLocation: {fixed_path}\nConnection: Closed\r\n\r\n", 'utf-8'))
             return
 
-        # normalize path before appending to BASE_DIRECTORY to avoid directory traversal
-        path = os.path.normpath(path)
-        path = path.replace("..","")
-        print("BEFORE: ",path)
-        path = os.path.normpath(path)
-        print("REQUESTED PATH:",path)
-        total_path = BASE_DIRECTORY + path
+        if not os.path.exists(total_path):
+            self.request.sendall(bytearray("HTTP/1.1 404 Not Found\r\n\r\n", 'utf-8'))
+            return
 
-        # get file extension
+        # get file extension since path does not specify a directory
         file_ext = file.split(".")[-1]
 
         # make sure file_ext is valid and derive mime_type. this webserver only hosts html and css
-        if not file_ext in self.valid_extensions:
+        if not file_ext in self.extensions_mimes.keys():
             self.request.sendall(bytearray("HTTP/1.1 404 Not Found\r\n\r\n", 'utf-8'))
             return
 
-        # from here, we can create the content-type header content
-        mime_type = f"text/{file_ext}"
-        print("MIME TYPE: " + mime_type)
-
-        # if such a file does not exist
-        if not os.path.exists(total_path):
-            print("FILE NOT FOUND!")
-            self.request.sendall(bytearray("HTTP/1.1 404 Not Found\r\n\r\n", 'utf-8'))
-            return
+        # from here, we can get the mime type
+        mime_type = self.extensions_mimes[file_ext]
 
         # placeholder for file contents
         contents = None
