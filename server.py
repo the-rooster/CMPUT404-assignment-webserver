@@ -55,16 +55,9 @@ class MyWebServer(socketserver.BaseRequestHandler):
         # extract file requested
         file = path.split("/")[-1]
 
-
-
-
         # normalize path before appending to BASE_DIRECTORY to avoid directory traversal
         path = self.fix_path(path)
         total_path = BASE_DIRECTORY + path
-
-
-
-
 
         if os.path.isdir(total_path):
             fixed_path = path + "/"
